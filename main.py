@@ -1,37 +1,29 @@
 from multiprocessing import Process, Pipe
-from os import getpid
-from datetime import datetime
-from time import sleep
-
-
-def local_time(counter):
-    return ' (LAMPORT_TIME={}, LOCAL_TIME={})'.format(counter,
-                                                     datetime.now())
 
 def calc_recv_timestamp(recv_time_stamp, counter):
+    #Take max of recieved and current value for each process
     result = [0 for i in range(len(counter))]
     for i in range(len(counter)):
         result[i] = max(recv_time_stamp[i], counter[i])
     return result
 
 def event(pid, counter):
+    # Increase counter of current pid
     counter[pid] += 1
-    #print('Something happened in {} !'.\
-    #      format(pid) + local_time(counter))
     return counter
 
-
 def send_message(pipe, pid, counter):
+    # Increase counter of current pid and send counter
     counter[pid] += 1
     pipe.send(('Empty shell', counter))
-    #print('Message sent from ' + str(pid) + local_time(counter))
     return counter
 
 def recv_message(pipe, pid, counter):
+    # increase counter of current pid, receive counter from other
+    # process and call function to recalculate counter
     counter[pid] += 1
     message, timestamp = pipe.recv()
     counter = calc_recv_timestamp(timestamp, counter)
-    #print('Message received at ' + str(pid)  + local_time(counter))
     return counter
 
 def process_one(pipe12):
